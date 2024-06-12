@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:notes_app/models/category_model.dart';
 
 class CategoryCard extends StatelessWidget {
-  final String name;
-  final String photoUrl;
+  final Category category;
   final VoidCallback onTap;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   CategoryCard({
-    required this.name,
-    required this.photoUrl,
+    required this.category,
     required this.onTap,
     required this.onEdit,
     required this.onDelete,
@@ -19,9 +18,12 @@ class CategoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundImage: NetworkImage(photoUrl),
+        backgroundImage: category.photoUrl.isNotEmpty
+            ? NetworkImage(category.photoUrl)
+            : AssetImage("assets/barber-logo.jpg") as ImageProvider,
       ),
-      title: Text(name),
+      title: Text(category.name),
+      subtitle: Text(category.description),
       onTap: onTap,
       trailing: PopupMenuButton<String>(
         onSelected: (String value) {

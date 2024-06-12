@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import '../models/category_model.dart';
-import '../models/environment_model.dart';
 
 class CategoryFormScreen extends StatefulWidget {
-  final Environment environment;
+  final String environmentId;
   final Category? category;
+  final Function(Category) onCategoryCreated;
 
-  CategoryFormScreen({required this.environment, this.category});
+  CategoryFormScreen({
+    required this.environmentId,
+    this.category,
+    required this.onCategoryCreated,
+  });
 
   @override
   _CategoryFormScreenState createState() => _CategoryFormScreenState();
@@ -14,39 +18,52 @@ class CategoryFormScreen extends StatefulWidget {
 
 class _CategoryFormScreenState extends State<CategoryFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late String _name;
-  late String _description;
-  late String _photoUrl;
+  String _name = '';
+  String _description = '';
 
   @override
   void initState() {
     super.initState();
-    _name = widget.category?.name ?? '';
-    _description = widget.category?.description ?? '';
-    _photoUrl = widget.category?.photoUrl ?? '';
+    print("environmentId in initState: ${widget.environmentId}");
+    if (widget.category != null) {
+      _name = widget.category!.name;
+      _description = widget.category!.description;
+    }
   }
 
-  void _saveForm() {
+  void _submitForm() {
+    print("environmentId in _submitForm: ${widget.environmentId}");
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      final category = Category(
+        id: widget.category?.id ?? '',
+        name: _name,
+        description: _description,
+        photoUrl: '',
+        items: [],
+      );
+
       if (widget.category == null) {
-        // Create a new category
-        widget.environment.categories.add(Category(
-          id: '',
-          name: _name,
-          description: _description,
-          photoUrl: _photoUrl,
-          items: [],
-        ));
+        Category.createCategory(widget.environmentId, category).then((_) {
+          widget.onCategoryCreated(category);
+          Navigator.pop(context);
+        }).catchError((error) {
+          print("Error creating category: $error");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao criar categoria: $error')),
+          );
+        });
       } else {
-        // Update existing category
-        setState(() {
-          widget.category!.name = _name;
-          widget.category!.description = _description;
-          widget.category!.photoUrl = _photoUrl;
+        category.updateCategory(widget.environmentId).then((_) {
+          widget.onCategoryCreated(category);
+          Navigator.pop(context);
+        }).catchError((error) {
+          print("Error updating category: $error");
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao atualizar categoria: $error')),
+          );
         });
       }
-      Navigator.of(context).pop();
     }
   }
 
@@ -54,21 +71,20 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-            widget.category == null ? 'Nova Categoria' : 'Editar Categoria'),
+        title: Text(widget.category == null ? 'Add Category' : 'Edit Category'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
             children: <Widget>[
               TextFormField(
                 initialValue: _name,
-                decoration: InputDecoration(labelText: 'Nome'),
+                decoration: InputDecoration(labelText: 'Name'),
                 validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, insira um nome';
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a name';
                   }
                   return null;
                 },
@@ -78,22 +94,21 @@ class _CategoryFormScreenState extends State<CategoryFormScreen> {
               ),
               TextFormField(
                 initialValue: _description,
-                decoration: InputDecoration(labelText: 'Descrição'),
+                decoration: InputDecoration(labelText: 'Description'),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a description';
+                  }
+                  return null;
+                },
                 onSaved: (value) {
                   _description = value!;
                 },
               ),
-              TextFormField(
-                initialValue: _photoUrl,
-                decoration: InputDecoration(labelText: 'URL da Foto'),
-                onSaved: (value) {
-                  _photoUrl = value!;
-                },
-              ),
               SizedBox(height: 20),
               ElevatedButton(
-                onPressed: _saveForm,
-                child: Text('Salvar'),
+                onPressed: _submitForm,
+                child: Text(widget.category == null ? 'Create' : 'Update'),
               ),
             ],
           ),

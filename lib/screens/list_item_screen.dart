@@ -5,53 +5,77 @@ import '../models/item_model.dart';
 import 'item_form_screen.dart';
 import '../widgets/item_card.dart';
 
-class CategoryItemsScreen extends StatefulWidget {
+class ItemListScreen extends StatefulWidget {
   final Category category;
+  final String environmentId;
 
-  CategoryItemsScreen({required this.category});
+  ItemListScreen({required this.category, required this.environmentId});
 
   @override
-  _CategoryItemsScreenState createState() => _CategoryItemsScreenState();
+  _ItemListScreenState createState() => _ItemListScreenState();
 }
 
-class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
-  void _addItem(Item item) {
+class _ItemListScreenState extends State<ItemListScreen> {
+  List<Item> _items = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadItems();
+  }
+
+  Future<void> _loadItems() async {
+    final items =
+        await Item.listItems(widget.environmentId, widget.category.id);
     setState(() {
-      widget.category.items.add(item);
+      _items = items;
     });
   }
 
-  void _navigateToAddItemScreen(BuildContext context) {}
-
-  void _editItem(BuildContext context, Item item) {
+  void _navigateToAddItemScreen(
+      BuildContext context, String environmentId, String categoryId) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ItemFormScreen(
-            item: item,
-            onItemCreated: (editedItem) {
-              setState(() {
-                int index = widget.category.items.indexOf(item);
-                widget.category.items[index] = editedItem;
-              });
-            }),
+          environmentId: environmentId,
+          categoryId: categoryId,
+          onItemCreated: (newItem) {
+            setState(() {
+              _items.add(newItem);
+            });
+          },
+        ),
       ),
     );
   }
 
-  void _deleteItem(Item item) {
-    setState(() {
-      widget.category.items.remove(item);
-    });
-  }
-
-  void _viewItemDetails(BuildContext context, Item item) {
+  void _navigateToEditItemScreen(BuildContext context, Item item) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ItemDetailScreen(item: item),
+        builder: (context) => ItemFormScreen(
+          environmentId: widget.environmentId,
+          categoryId: widget.category.id,
+          item: item,
+          onItemCreated: (editedItem) {
+            setState(() {
+              final index = _items.indexOf(item);
+              if (index != -1) {
+                _items[index] = editedItem;
+              }
+            });
+          },
+        ),
       ),
     );
+  }
+
+  void _deleteItem(Item item) async {
+    await Item.deleteItem(widget.environmentId, widget.category.id, item.id);
+    setState(() {
+      _items.remove(item);
+    });
   }
 
   @override
@@ -61,19 +85,31 @@ class _CategoryItemsScreenState extends State<CategoryItemsScreen> {
         title: Text(widget.category.name),
       ),
       body: ListView.builder(
-        itemCount: widget.category.items.length,
+        itemCount: _items.length,
         itemBuilder: (context, index) {
-          final item = widget.category.items[index];
+          final item = _items[index];
           return ItemCard(
             item: item,
-            onTap: () => _viewItemDetails(context, item),
-            onEdit: () => _editItem(context, item),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ItemDetailScreen(
+                    environmentId: widget.environmentId,
+                    categoryId: widget.category.id,
+                    item: item,
+                  ),
+                ),
+              );
+            },
+            onEdit: () => _navigateToEditItemScreen(context, item),
             onDelete: () => _deleteItem(item),
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToAddItemScreen(context),
+        onPressed: () => _navigateToAddItemScreen(
+            context, widget.environmentId, widget.category.id),
         child: Icon(Icons.add),
       ),
     );

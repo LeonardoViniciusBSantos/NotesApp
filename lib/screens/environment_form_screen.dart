@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/environment_model.dart';
-import '../mock_data/mock_environments.dart';
 
 class EnvironmentFormScreen extends StatefulWidget {
   final Environment? environment;
@@ -13,40 +13,68 @@ class EnvironmentFormScreen extends StatefulWidget {
 
 class _EnvironmentFormScreenState extends State<EnvironmentFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  late String _name;
-  late String _description;
-  late String _photoUrl;
+  late TextEditingController _nameController;
+  late TextEditingController _descriptionController;
+  late TextEditingController _photoUrlController;
 
   @override
   void initState() {
     super.initState();
-    _name = widget.environment?.name ?? '';
-    _description = widget.environment?.description ?? '';
-    _photoUrl = widget.environment?.photoUrl ?? '';
+    _nameController =
+        TextEditingController(text: widget.environment?.name ?? '');
+    _descriptionController =
+        TextEditingController(text: widget.environment?.description ?? '');
+    _photoUrlController =
+        TextEditingController(text: widget.environment?.photoUrl ?? '');
   }
 
-  void _saveForm() {
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _photoUrlController.dispose();
+    super.dispose();
+  }
+
+  void _saveForm() async {
     if (_formKey.currentState!.validate()) {
-      _formKey.currentState!.save();
+      final name = _nameController.text;
+      final description = _descriptionController.text;
+      final photoUrl = _photoUrlController.text;
+
       if (widget.environment == null) {
         // Create a new environment
-        mockEnvironments.add(Environment(
+        final newEnvironment = Environment(
           id: '',
-          name: _name,
-          description: _description,
-          photoUrl: _photoUrl,
+          name: name,
+          description: description,
+          photoUrl: photoUrl,
           categories: [],
-        ));
+        );
+        await _createEnvironment(newEnvironment);
       } else {
         // Update existing environment
-        setState(() {
-          widget.environment!.name = _name;
-          widget.environment!.description = _description;
-          widget.environment!.photoUrl = _photoUrl;
-        });
+        widget.environment!.name = name;
+        widget.environment!.description = description;
+        widget.environment!.photoUrl = photoUrl;
+        await _updateEnvironment(widget.environment!);
       }
       Navigator.of(context).pop();
     }
+  }
+
+  Future<void> _createEnvironment(Environment environment) async {
+    final docRef = await FirebaseFirestore.instance
+        .collection('environments')
+        .add(environment.toMap());
+    environment.id = docRef.id;
+  }
+
+  Future<void> _updateEnvironment(Environment environment) async {
+    await FirebaseFirestore.instance
+        .collection('environments')
+        .doc(environment.id)
+        .update(environment.toMap());
   }
 
   @override
@@ -63,7 +91,7 @@ class _EnvironmentFormScreenState extends State<EnvironmentFormScreen> {
           child: Column(
             children: <Widget>[
               TextFormField(
-                initialValue: _name,
+                controller: _nameController,
                 decoration: InputDecoration(labelText: 'Nome'),
                 validator: (value) {
                   if (value!.isEmpty) {
@@ -71,23 +99,14 @@ class _EnvironmentFormScreenState extends State<EnvironmentFormScreen> {
                   }
                   return null;
                 },
-                onSaved: (value) {
-                  _name = value!;
-                },
               ),
               TextFormField(
-                initialValue: _description,
+                controller: _descriptionController,
                 decoration: InputDecoration(labelText: 'Descrição'),
-                onSaved: (value) {
-                  _description = value!;
-                },
               ),
               TextFormField(
-                initialValue: _photoUrl,
+                controller: _photoUrlController,
                 decoration: InputDecoration(labelText: 'URL da Foto'),
-                onSaved: (value) {
-                  _photoUrl = value!;
-                },
               ),
               SizedBox(height: 20),
               ElevatedButton(

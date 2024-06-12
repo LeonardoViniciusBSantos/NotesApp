@@ -16,55 +16,37 @@ class ItemCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
+    return ListTile(
+      leading: CircleAvatar(
+        backgroundImage: NetworkImage("assets/barber-logo.jpg"),
+      ),
+      title: Text(item.name),
+      subtitle: Text(item.description),
       onTap: onTap,
-      onLongPress: () {
-        showModalBottomSheet(
-          context: context,
-          builder: (context) {
-            return Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                ListTile(
-                  leading: Icon(Icons.edit),
-                  title: Text('Edit'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    onEdit();
-                  },
-                ),
-                ListTile(
-                  leading: Icon(Icons.delete),
-                  title: Text('Delete'),
-                  onTap: () {
-                    Navigator.pop(context);
-                    onDelete();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      },
-      child: Card(
-        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-        child: Padding(
-          padding: EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              Text(
-                item.name,
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.0),
-              ),
-              SizedBox(height: 8.0),
-              Text(
-                item.description,
-                style: TextStyle(fontSize: 14.0),
-              ),
-            ],
+      trailing: PopupMenuButton<String>(
+        onSelected: (String value) {
+          if (value == 'edit') {
+            onEdit();
+          } else if (value == 'delete') {
+            onDelete();
+          }
+        },
+        itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+          const PopupMenuItem<String>(
+            value: 'edit',
+            child: ListTile(
+              leading: Icon(Icons.edit),
+              title: Text('Editar'),
+            ),
           ),
-        ),
+          const PopupMenuItem<String>(
+            value: 'delete',
+            child: ListTile(
+              leading: Icon(Icons.delete),
+              title: Text('Excluir'),
+            ),
+          ),
+        ],
       ),
     );
   }
