@@ -5,34 +5,48 @@ import '../models/activity_model.dart';
 class ActivityDetailScreen extends StatelessWidget {
   final Activity activity;
 
-  ActivityDetailScreen({required this.activity});
+  const ActivityDetailScreen({Key? key, required this.activity})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(activity.name),
+        title: Text('Detalhes da Atividade'),
       ),
       body: Padding(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
+          children: [
             Text(
-              activity.name,
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24.0),
+              'Nome: ${activity.name}',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 8.0),
+            SizedBox(height: 8),
             Text(
-              DateFormat('dd/MM/yyyy HH:mm').format(activity.dateTime),
-              style: TextStyle(fontSize: 16.0),
+              'Descrição: ${activity.description}',
+              style: TextStyle(fontSize: 16),
             ),
-            SizedBox(height: 8.0),
+            SizedBox(height: 8),
             Text(
-              activity.description,
-              style: TextStyle(fontSize: 16.0),
+              'Data/Hora: ${DateFormat('dd/MM/yyyy HH:mm').format(activity.dateTime)}',
+              style: TextStyle(fontSize: 16),
             ),
-            // Exibir anexos e comentários se necessário
+            // Adicione mais informações da atividade conforme necessário
+            // Placeholders para anexos e comentários
+            SizedBox(height: 16),
+            Text(
+              'Anexos:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            // Implementar a exibição de anexos aqui
+            SizedBox(height: 8),
+            Text(
+              'Comentários:',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            // Implementar a exibição de comentários aqui
           ],
         ),
       ),

@@ -18,7 +18,7 @@ class ItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        backgroundImage: NetworkImage("assets/barber-logo.jpg"),
+        backgroundImage: NetworkImage("assets/imagem.png"),
       ),
       title: Text(item.name),
       subtitle: Text(item.description),

@@ -10,10 +10,12 @@ class ItemDetailScreen extends StatefulWidget {
   final String environmentId;
   final String categoryId;
 
-  ItemDetailScreen(
-      {required this.item,
-      required this.environmentId,
-      required this.categoryId});
+  const ItemDetailScreen({
+    Key? key,
+    required this.item,
+    required this.environmentId,
+    required this.categoryId,
+  }) : super(key: key);
 
   @override
   _ItemDetailScreenState createState() => _ItemDetailScreenState();
@@ -30,7 +32,14 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
 
   Future<void> _loadActivities() async {
     final activities = await Item.listActivities(
-        widget.environmentId, widget.categoryId, widget.item.id);
+      widget.environmentId,
+      widget.categoryId,
+      widget.item.id,
+    );
+
+    // Ordenar as atividades pela data em ordem decrescente
+    activities.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+
     setState(() {
       _activities = activities;
     });
@@ -47,6 +56,8 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
           onActivityCreated: (newActivity) {
             setState(() {
               _activities.add(newActivity);
+              // Ordenar as atividades novamente após adicionar uma nova
+              _activities.sort((a, b) => b.dateTime.compareTo(a.dateTime));
             });
           },
         ),
@@ -67,17 +78,42 @@ class _ItemDetailScreenState extends State<ItemDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.item.name),
+        title: Text('Detalhes do Item'),
       ),
-      body: ListView.builder(
-        itemCount: _activities.length,
-        itemBuilder: (context, index) {
-          final activity = _activities[index];
-          return ActivityCard(
-            activity: activity,
-            onTap: () => _viewActivityDetails(context, activity),
-          );
-        },
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              widget.item.name,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text(
+              "Descrição: ${widget.item.description}",
+              style: TextStyle(fontSize: 16),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Atividades:',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _activities.length,
+                itemBuilder: (context, index) {
+                  final activity = _activities[index];
+                  return ActivityCard(
+                    activity: activity,
+                    onTap: () => _viewActivityDetails(context, activity),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToAddActivityScreen(context),
